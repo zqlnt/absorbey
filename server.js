@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { YoutubeTranscriptApi } from 'youtube-transcript-api'
+import { YoutubeTranscript } from 'youtube-transcript'
 
 dotenv.config({ path: '.env.local' })
 
@@ -11,13 +11,16 @@ const PORT = 3001
 app.use(cors())
 app.use(express.json())
 
-// Function to get YouTube transcript using youtube-transcript-api
+// Function to get YouTube transcript using youtube-transcript v1.2.1
 async function getYouTubeTranscript(videoId) {
   try {
     console.log(`📝 Fetching transcript for video: ${videoId}`)
     
-    // Fetch transcript
-    const transcript = await YoutubeTranscriptApi.fetchTranscript(videoId)
+    // Fetch transcript with explicit config
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+      lang: 'en',
+      country: 'US'
+    })
     
     if (!transcript || transcript.length === 0) {
       console.log('⚠️ No transcript available for this video')
@@ -36,27 +39,46 @@ async function getYouTubeTranscript(videoId) {
       .join('\n')
     
     console.log(`📊 Transcript extracted: ${formattedTranscript.length} characters`)
-    console.log(`🎯 Sample: ${formattedTranscript.substring(0, 200)}...`)
+    console.log(`🎯 First 200 chars: ${formattedTranscript.substring(0, 200)}...`)
     
     return formattedTranscript
     
   } catch (error) {
     console.error('⚠️ Transcript extraction failed:', error.message)
+    console.error('💡 Error details:', error)
     
-    // Try without language specification as fallback
+    // Try without country specification as fallback
     try {
-      console.log('🔄 Trying alternative extraction method...')
-      const transcript = await YoutubeTranscriptApi.fetchTranscript(videoId, { lang: 'en' })
+      console.log('🔄 Trying without country specification...')
+      const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
+        lang: 'en'
+      })
       
       if (transcript && transcript.length > 0) {
         const formatted = transcript
           .map(s => `[${formatTimestamp(s.offset / 1000)}] ${s.text.replace(/\n/g, ' ').trim()}`)
           .join('\n')
-        console.log(`✅ Alternative method succeeded: ${formatted.length} characters`)
+        console.log(`✅ Fallback succeeded: ${formatted.length} characters`)
         return formatted
       }
     } catch (fallbackError) {
       console.error('❌ Fallback also failed:', fallbackError.message)
+    }
+    
+    // Try without any options as last resort
+    try {
+      console.log('🔄 Trying with no options...')
+      const transcript = await YoutubeTranscript.fetchTranscript(videoId)
+      
+      if (transcript && transcript.length > 0) {
+        const formatted = transcript
+          .map(s => `[${formatTimestamp(s.offset / 1000)}] ${s.text.replace(/\n/g, ' ').trim()}`)
+          .join('\n')
+        console.log(`✅ Last resort succeeded: ${formatted.length} characters`)
+        return formatted
+      }
+    } catch (lastError) {
+      console.error('❌ All methods failed')
     }
     
     return null
