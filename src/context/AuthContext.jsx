@@ -24,12 +24,29 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user)
-      setLoading(false)
-    })
+    const unsubscribe = onAuthStateChanged(auth, 
+      (user) => {
+        setUser(user)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Auth state change error:', error)
+        setLoading(false) // Still set loading to false even on error
+      }
+    )
 
-    return unsubscribe
+    // Fallback timeout in case auth never resolves
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth initialization timeout - proceeding without auth')
+        setLoading(false)
+      }
+    }, 3000)
+
+    return () => {
+      unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const signInWithGoogle = async () => {
@@ -72,7 +89,16 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="flex items-center justify-center h-screen bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading Absorbey...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   )
 }
