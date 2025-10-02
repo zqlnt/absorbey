@@ -30,30 +30,41 @@ export default function ProjectView({ projectId, onBackToHome }) {
     }))
   }
 
-  // Break summary into key points
+  // Break summary into comprehensive sections
   const getSummaryPoints = (summary) => {
     if (!summary) return []
     
-    // Split by common delimiters and filter out empty lines
-    const points = summary
-      .split(/\n+|\.(?=\s+[A-Z])|(?<=\d\.)\s+/)
-      .filter(p => p.trim().length > 20)
-      .map(p => p.trim().replace(/^\d+\.\s*/, ''))
-      .slice(0, 8) // Max 8 points
+    // Split by numbered sections (1., 2., 3., etc.) or **headers**
+    const sections = summary
+      .split(/(?=\d+\.\s+\*{0,2}[A-Z])|(?=\*{2}[^*]+\*{2})/)
+      .filter(section => section.trim().length > 50)
+      .map(section => {
+        const trimmed = section.trim()
+        // Extract header and content
+        const headerMatch = trimmed.match(/^(\d+\.\s+)?\*{0,2}([^*\n]+)\*{0,2}/)
+        const header = headerMatch ? headerMatch[2].trim() : null
+        const content = trimmed.replace(/^(\d+\.\s+)?\*{0,2}[^*\n]+\*{0,2}\s*/, '').trim()
+        
+        return {
+          header: header || `Section ${sections.length + 1}`,
+          content: content || trimmed,
+          hasTimestamps: /\[\d+:\d+\]/.test(content)
+        }
+      })
     
-    return points.length > 0 ? points : [summary]
+    return sections.length > 0 ? sections : [{
+      header: 'Summary',
+      content: summary,
+      hasTimestamps: false
+    }]
   }
 
-  // Create summary cards (group points into cards)
-  const getSummaryCards = (points) => {
-    const cards = []
-    for (let i = 0; i < points.length; i += 2) {
-      cards.push({
-        id: i / 2,
-        points: points.slice(i, i + 2)
-      })
-    }
-    return cards
+  // Create summary cards (one section per card)
+  const getSummaryCards = (sections) => {
+    return sections.map((section, index) => ({
+      id: index,
+      section: section
+    }))
   }
 
   const handleQuizAnswer = (answerIndex) => {
@@ -159,20 +170,42 @@ export default function ProjectView({ projectId, onBackToHome }) {
                     
                     return (
                       <div className="space-y-4">
-                        {/* Summary Card Carousel */}
+                        {/* Comprehensive Summary Card Carousel */}
                         <div className="relative">
-                          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-8 min-h-[200px] flex flex-col justify-center">
-                            <div className="space-y-4">
-                              {cards[currentSummaryCard].points.map((point, idx) => (
-                                <div key={idx} className="flex items-start gap-3">
-                                  <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                    {currentSummaryCard * 2 + idx + 1}
-                                  </div>
-                                  <p className="text-gray-800 text-lg leading-relaxed flex-1">
-                                    {point}
-                                  </p>
+                          <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 rounded-xl p-8 min-h-[300px] border-2 border-purple-100 shadow-lg">
+                            {/* Card Header */}
+                            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-purple-200">
+                              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-md">
+                                {currentSummaryCard + 1}
+                              </div>
+                              <h3 className="text-2xl font-bold text-gray-900">
+                                {cards[currentSummaryCard].section.header}
+                              </h3>
+                              {cards[currentSummaryCard].section.hasTimestamps && (
+                                <span className="ml-auto px-3 py-1 bg-purple-200 text-purple-800 text-xs font-semibold rounded-full">
+                                  📍 With Timestamps
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Card Content */}
+                            <div className="prose prose-lg max-w-none">
+                              <p className="text-gray-800 text-base leading-relaxed whitespace-pre-wrap">
+                                {cards[currentSummaryCard].section.content}
+                              </p>
+                            </div>
+                            
+                            {/* Progress Indicator */}
+                            <div className="mt-6 pt-4 border-t border-purple-200">
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <span className="font-semibold">Section {currentSummaryCard + 1} of {cards.length}</span>
+                                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-300"
+                                    style={{ width: `${((currentSummaryCard + 1) / cards.length) * 100}%` }}
+                                  />
                                 </div>
-                              ))}
+                              </div>
                             </div>
                           </div>
                           
