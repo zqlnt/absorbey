@@ -1,7 +1,11 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { YoutubeTranscript } from 'youtube-transcript'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+import { unlink } from 'fs/promises'
+
+const execPromise = promisify(exec)
 
 dotenv.config({ path: '.env.local' })
 
@@ -11,78 +15,104 @@ const PORT = 3001
 app.use(cors())
 app.use(express.json())
 
-// Function to get YouTube transcript using youtube-transcript v1.2.1
+// Function to get YouTube transcript using yt-dlp (MOST RELIABLE)
 async function getYouTubeTranscript(videoId) {
+  const tempFile = `transcript-${videoId}-${Date.now()}`
+  
   try {
     console.log(`📝 Fetching transcript for video: ${videoId}`)
+    console.log(`🔧 Using yt-dlp (most reliable method)`)
     
-    // Fetch transcript with explicit config
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
-      lang: 'en',
-      country: 'US'
-    })
+    // Use yt-dlp to download subtitles
+    const command = `yt-dlp --write-subs --write-auto-subs --sub-lang en --skip-download --sub-format srt --output "${tempFile}" "https://www.youtube.com/watch?v=${videoId}"`
+    
+    await execPromise(command, { timeout: 30000 }) // 30 second timeout
+    
+    // Read the SRT file
+    const fs = await import('fs')
+    const srtContent = fs.readFileSync(`${tempFile}.en.srt`, 'utf-8')
+    
+    // Parse SRT to formatted transcript
+    const transcript = parseSRT(srtContent)
+    
+    // Clean up temp file
+    try {
+      await unlink(`${tempFile}.en.srt`)
+    } catch (cleanupError) {
+      console.warn('⚠️ Could not delete temp file:', cleanupError.message)
+    }
     
     if (!transcript || transcript.length === 0) {
-      console.log('⚠️ No transcript available for this video')
+      console.log('⚠️ No transcript content extracted')
       return null
     }
     
-    console.log(`✅ Found transcript with ${transcript.length} segments`)
+    console.log(`✅ Transcript extracted: ${transcript.length} characters`)
+    console.log(`📊 First 200 chars: ${transcript.substring(0, 200)}...`)
     
-    // Format transcript with timestamps
-    const formattedTranscript = transcript
-      .map(segment => {
-        const timestamp = formatTimestamp(segment.offset / 1000) // offset is in milliseconds
-        const text = segment.text.replace(/\n/g, ' ').trim()
-        return `[${timestamp}] ${text}`
-      })
-      .join('\n')
-    
-    console.log(`📊 Transcript extracted: ${formattedTranscript.length} characters`)
-    console.log(`🎯 First 200 chars: ${formattedTranscript.substring(0, 200)}...`)
-    
-    return formattedTranscript
+    return transcript
     
   } catch (error) {
-    console.error('⚠️ Transcript extraction failed:', error.message)
-    console.error('💡 Error details:', error)
+    console.error('⚠️ yt-dlp extraction failed:', error.message)
     
-    // Try without country specification as fallback
+    // Clean up temp file if it exists
     try {
-      console.log('🔄 Trying without country specification...')
-      const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
-        lang: 'en'
-      })
-      
-      if (transcript && transcript.length > 0) {
-        const formatted = transcript
-          .map(s => `[${formatTimestamp(s.offset / 1000)}] ${s.text.replace(/\n/g, ' ').trim()}`)
-          .join('\n')
-        console.log(`✅ Fallback succeeded: ${formatted.length} characters`)
-        return formatted
-      }
-    } catch (fallbackError) {
-      console.error('❌ Fallback also failed:', fallbackError.message)
-    }
-    
-    // Try without any options as last resort
-    try {
-      console.log('🔄 Trying with no options...')
-      const transcript = await YoutubeTranscript.fetchTranscript(videoId)
-      
-      if (transcript && transcript.length > 0) {
-        const formatted = transcript
-          .map(s => `[${formatTimestamp(s.offset / 1000)}] ${s.text.replace(/\n/g, ' ').trim()}`)
-          .join('\n')
-        console.log(`✅ Last resort succeeded: ${formatted.length} characters`)
-        return formatted
-      }
-    } catch (lastError) {
-      console.error('❌ All methods failed')
-    }
+      await unlink(`${tempFile}.en.srt`)
+    } catch {}
     
     return null
   }
+}
+
+// Parse SRT format to timestamped text
+function parseSRT(srtContent) {
+  const lines = srtContent.split('\n')
+  const segments = []
+  let currentTimestamp = ''
+  let currentText = []
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    
+    // Detect timestamp line (e.g., "00:00:10,500 --> 00:00:13,800")
+    if (line.match(/\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}/)) {
+      // Save previous segment if exists
+      if (currentTimestamp && currentText.length > 0) {
+        const text = currentText.join(' ').replace(/\s+/g, ' ').trim()
+        if (text && text !== '[♪♪♪]' && !text.match(/^[♪\[\]]+$/)) {
+          segments.push(`[${currentTimestamp}] ${text}`)
+        }
+      }
+      
+      // Extract start timestamp
+      const timestamp = line.split(' --> ')[0]
+      const parts = timestamp.split(':')
+      const minutes = parseInt(parts[1])
+      const seconds = parseInt(parts[2].split(',')[0])
+      currentTimestamp = `${minutes}:${seconds.toString().padStart(2, '0')}`
+      currentText = []
+    }
+    // Skip sequence numbers
+    else if (line.match(/^\d+$/)) {
+      continue
+    }
+    // Collect text lines
+    else if (line) {
+      currentText.push(line)
+    }
+  }
+  
+  // Add last segment
+  if (currentTimestamp && currentText.length > 0) {
+    const text = currentText.join(' ').replace(/\s+/g, ' ').trim()
+    if (text && text !== '[♪♪♪]' && !text.match(/^[♪\[\]]+$/)) {
+      segments.push(`[${currentTimestamp}] ${text}`)
+    }
+  }
+  
+  console.log(`📊 Parsed ${segments.length} transcript segments`)
+  
+  return segments.join('\n')
 }
 
 // Helper function to format seconds into MM:SS
