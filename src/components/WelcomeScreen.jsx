@@ -11,7 +11,7 @@ const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
   const [error, setError] = useState('')
 
   const { addProject } = useProjects()
-  const { currentUser } = useAuth()
+  const { user } = useAuth()
   const words = ['the universe', 'art', 'space', 'music', 'movies', 'science', 'history', 'philosophy', 'technology', 'nature']
 
   // Rotating text animation
@@ -38,7 +38,7 @@ const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
     }
 
     // Check if user is signed in
-    if (!currentUser) {
+    if (!user) {
       onCreateProjectAttempt() // Trigger auth modal
       return
     }
