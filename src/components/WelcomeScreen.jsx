@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 import { useProjects } from '../context/ProjectContext'
+import { useAuth } from '../context/AuthContext'
 
-const WelcomeScreen = ({ onProjectCreated }) => {
+const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
   const [inputValue, setInputValue] = useState('')
   const [isProcessingVideo, setIsProcessingVideo] = useState(false)
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
@@ -10,6 +11,7 @@ const WelcomeScreen = ({ onProjectCreated }) => {
   const [error, setError] = useState('')
 
   const { addProject } = useProjects()
+  const { currentUser } = useAuth()
   const words = ['the universe', 'art', 'space', 'music', 'movies', 'science', 'history', 'philosophy', 'technology', 'nature']
 
   // Rotating text animation
@@ -32,6 +34,12 @@ const WelcomeScreen = ({ onProjectCreated }) => {
     // Validate YouTube URL
     if (!inputValue.includes('youtube.com') && !inputValue.includes('youtu.be')) {
       setError('Please enter a valid YouTube URL')
+      return
+    }
+
+    // Check if user is signed in
+    if (!currentUser) {
+      onCreateProjectAttempt() // Trigger auth modal
       return
     }
 
