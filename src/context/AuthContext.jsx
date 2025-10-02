@@ -23,6 +23,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // If auth is not initialized, skip
+    if (!auth) {
+      console.warn('⚠️ Firebase Auth not initialized - app will run without authentication')
+      setLoading(false)
+      return
+    }
+
     // Listen for auth state changes
     const unsubscribe = onAuthStateChanged(auth, 
       (user) => {
@@ -50,6 +57,9 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const signInWithGoogle = async () => {
+    if (!auth) {
+      throw new Error('Authentication not available - Firebase not initialized')
+    }
     const provider = new GoogleAuthProvider()
     try {
       const result = await signInWithPopup(auth, provider)
@@ -61,6 +71,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signInAnonymouslyFn = async () => {
+    if (!auth) {
+      throw new Error('Authentication not available - Firebase not initialized')
+    }
     try {
       const result = await signInAnonymously(auth)
       return result.user
@@ -71,6 +84,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signOut = async () => {
+    if (!auth) {
+      throw new Error('Authentication not available - Firebase not initialized')
+    }
     try {
       await firebaseSignOut(auth)
     } catch (error) {
