@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { useProjects } from '../context/ProjectContext'
-import { ChevronDown, ChevronUp, Loader2, Home, Trash2, ChevronLeft, ChevronRight, CheckCircle, XCircle, BookOpen, Brain } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, Home, Trash2, ChevronLeft, ChevronRight, CheckCircle, XCircle, BookOpen, Brain, BarChart3, Users, Clock, Quote, Link as LinkIcon } from 'lucide-react'
 
 export default function ProjectView({ projectId, onBackToHome }) {
   const { projects, deleteProject } = useProjects()
   const [expandedSummary, setExpandedSummary] = useState(true)
+  const [expandedStats, setExpandedStats] = useState(false)
+  const [expandedPeople, setExpandedPeople] = useState(false)
+  const [expandedTimeline, setExpandedTimeline] = useState(false)
+  const [expandedQuotes, setExpandedQuotes] = useState(false)
+  const [expandedResources, setExpandedResources] = useState(false)
   const [flippedCards, setFlippedCards] = useState({})
   const [currentSummaryCard, setCurrentSummaryCard] = useState(0)
   const [quizMode, setQuizMode] = useState(false)
@@ -32,31 +37,40 @@ export default function ProjectView({ projectId, onBackToHome }) {
 
   // Break summary into comprehensive sections
   const getSummaryPoints = (summary) => {
-    if (!summary) return []
-    
-    // Split by numbered sections (1., 2., 3., etc.) or **headers**
-    const sections = summary
-      .split(/(?=\d+\.\s+\*{0,2}[A-Z])|(?=\*{2}[^*]+\*{2})/)
-      .filter(section => section.trim().length > 50)
-      .map(section => {
-        const trimmed = section.trim()
-        // Extract header and content
-        const headerMatch = trimmed.match(/^(\d+\.\s+)?\*{0,2}([^*\n]+)\*{0,2}/)
-        const header = headerMatch ? headerMatch[2].trim() : null
-        const content = trimmed.replace(/^(\d+\.\s+)?\*{0,2}[^*\n]+\*{0,2}\s*/, '').trim()
-        
-        return {
-          header: header || `Section ${sections.length + 1}`,
-          content: content || trimmed,
-          hasTimestamps: /\[\d+:\d+\]/.test(content)
-        }
-      })
-    
-    return sections.length > 0 ? sections : [{
-      header: 'Summary',
-      content: summary,
-      hasTimestamps: false
-    }]
+    try {
+      if (!summary || typeof summary !== 'string') return []
+      
+      // Split by numbered sections (1., 2., 3., etc.) or **headers**
+      const sections = summary
+        .split(/(?=\n\n\d+\.\s+\*{0,2}[A-Z])|(?=\n\n\*{2}[^*]+\*{2})/)
+        .filter(section => section.trim().length > 50)
+        .map((section, idx) => {
+          const trimmed = section.trim()
+          // Extract header and content
+          const headerMatch = trimmed.match(/^(\d+\.\s+)?\*{0,2}([^*\n]+)\*{0,2}/)
+          const header = headerMatch ? headerMatch[2].trim() : null
+          const content = trimmed.replace(/^(\d+\.\s+)?\*{0,2}[^*\n]+\*{0,2}\s*/, '').trim()
+          
+          return {
+            header: header || `Section ${idx + 1}`,
+            content: content || trimmed,
+            hasTimestamps: /\[\d+:\d+\]/.test(content || trimmed)
+          }
+        })
+      
+      return sections.length > 0 ? sections : [{
+        header: 'Summary',
+        content: summary,
+        hasTimestamps: /\[\d+:\d+\]/.test(summary)
+      }]
+    } catch (error) {
+      console.error('Error parsing summary:', error)
+      return [{
+        header: 'Summary',
+        content: summary || 'No summary available',
+        hasTimestamps: false
+      }]
+    }
   }
 
   // Create summary cards (one section per card)
@@ -65,6 +79,93 @@ export default function ProjectView({ projectId, onBackToHome }) {
       id: index,
       section: section
     }))
+  }
+
+  // Extract statistics and data from summary
+  const extractStats = (summary) => {
+    try {
+      if (!summary || typeof summary !== 'string') return []
+      const stats = []
+      // Match numbers with context (e.g., "25%", "$1.5M", "3 years", "over 1000")
+      const statPattern = /([^.!?]*(?:\d+(?:,\d{3})*(?:\.\d+)?(?:%|million|billion|thousand|k|M|B)?)[^.!?]*[.!?])/gi
+      const matches = summary.match(statPattern)
+      if (matches) {
+        matches.forEach(match => {
+          const cleaned = match.trim()
+          if (cleaned.length > 15 && cleaned.length < 200) {
+            stats.push(cleaned)
+          }
+        })
+      }
+      return stats.slice(0, 8) // Limit to 8 stats
+    } catch (error) {
+      console.error('Error extracting stats:', error)
+      return []
+    }
+  }
+
+  // Extract names and people from summary
+  const extractPeople = (summary) => {
+    try {
+      if (!summary || typeof summary !== 'string') return []
+      const people = []
+      // Match capitalized names (simple heuristic)
+      const namePattern = /(?:Dr\.|Professor|CEO|President|Director)?\s*([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g
+      const matches = [...summary.matchAll(namePattern)]
+      const seen = new Set()
+      matches.forEach(match => {
+        const name = match[1].trim()
+        if (!seen.has(name) && name.length > 3) {
+          seen.add(name)
+          people.push(name)
+        }
+      })
+      return people.slice(0, 10)
+    } catch (error) {
+      console.error('Error extracting people:', error)
+      return []
+    }
+  }
+
+  // Extract dates and timeline from summary
+  const extractTimeline = (summary) => {
+    try {
+      if (!summary || typeof summary !== 'string') return []
+      const timeline = []
+      // Match dates and years with context
+      const datePattern = /([^.!?]*(?:\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|January|February|March|April|May|June|July|August|September|October|November|December)[^.!?]*[.!?])/gi
+      const matches = summary.match(datePattern)
+      if (matches) {
+        matches.forEach(match => {
+          const cleaned = match.trim()
+          if (cleaned.length > 20 && cleaned.length < 200) {
+            timeline.push(cleaned)
+          }
+        })
+      }
+      return timeline.slice(0, 8)
+    } catch (error) {
+      console.error('Error extracting timeline:', error)
+      return []
+    }
+  }
+
+  // Extract quotes from summary
+  const extractQuotes = (summary) => {
+    try {
+      if (!summary || typeof summary !== 'string') return []
+      const quotes = []
+      // Match text in quotes
+      const quotePattern = /"([^"]{20,200})"/g
+      const matches = [...summary.matchAll(quotePattern)]
+      matches.forEach(match => {
+        quotes.push(match[1])
+      })
+      return quotes.slice(0, 6)
+    } catch (error) {
+      console.error('Error extracting quotes:', error)
+      return []
+    }
   }
 
   const handleQuizAnswer = (answerIndex) => {
@@ -97,16 +198,17 @@ export default function ProjectView({ projectId, onBackToHome }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-32 px-8 py-8">
+    <div className="flex-1 overflow-y-auto pb-20 sm:pb-32 px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="max-w-4xl mx-auto">
         {/* Navigation header */}
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-4 sm:mb-6 flex flex-wrap gap-2 sm:gap-0 justify-between items-center">
           <button
             onClick={onBackToHome}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200"
+            className="flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 text-sm"
           >
-            <Home className="w-4 h-4" />
-            Back to Home
+            <Home className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Back to Home</span>
+            <span className="sm:hidden">Back</span>
           </button>
           
           <button
@@ -116,30 +218,31 @@ export default function ProjectView({ projectId, onBackToHome }) {
                 onBackToHome()
               }
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors duration-200"
+            className="flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors duration-200 text-sm"
           >
-            <Trash2 className="w-4 h-4" />
-            Delete Project
+            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Delete Project</span>
+            <span className="sm:hidden">Delete</span>
           </button>
         </div>
 
         {/* Video header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           {project.thumbnail && (
             <img 
               src={project.thumbnail} 
               alt={project.title}
-              className="w-full h-64 object-cover rounded-2xl shadow-lg mb-4"
+              className="w-full h-40 sm:h-48 md:h-64 object-cover rounded-xl sm:rounded-2xl shadow-lg mb-3 sm:mb-4"
             />
           )}
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 leading-tight">
             {project.title || 'Untitled Project'}
           </h1>
           <a 
             href={project.url} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-purple-600 hover:text-purple-700 text-sm"
+            className="text-purple-600 hover:text-purple-700 text-xs sm:text-sm font-medium inline-flex items-center gap-1"
           >
             Watch on YouTube →
           </a>
@@ -251,9 +354,9 @@ export default function ProjectView({ projectId, onBackToHome }) {
                         <div className="flex justify-center pt-4">
                           <button
                             onClick={() => setQuizMode(true)}
-                            className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                            className="flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                           >
-                            <Brain className="w-6 h-6" />
+                            <Brain className="w-5 h-5 sm:w-6 sm:h-6" />
                             Test Your Knowledge
                           </button>
                         </div>
@@ -270,6 +373,124 @@ export default function ProjectView({ projectId, onBackToHome }) {
             </div>
           )}
         </div>
+
+        {/* Statistics & Data Section */}
+        {project.summary && extractStats(project.summary).length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
+            <button
+              onClick={() => setExpandedStats(!expandedStats)}
+              className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-t-2xl"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Statistics & Data</h2>
+              </div>
+              {expandedStats ? <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" /> : <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </button>
+            
+            {expandedStats && (
+              <div className="p-4 sm:p-6 pt-0 border-t border-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {extractStats(project.summary).map((stat, index) => (
+                    <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+                      <p className="text-sm sm:text-base text-gray-800 leading-relaxed">{stat}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Timeline & Events Section */}
+        {project.summary && extractTimeline(project.summary).length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
+            <button
+              onClick={() => setExpandedTimeline(!expandedTimeline)}
+              className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-t-2xl"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Timeline & Events</h2>
+              </div>
+              {expandedTimeline ? <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" /> : <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </button>
+            
+            {expandedTimeline && (
+              <div className="p-4 sm:p-6 pt-0 border-t border-gray-100">
+                <div className="space-y-3 sm:space-y-4">
+                  {extractTimeline(project.summary).map((event, index) => (
+                    <div key={index} className="flex gap-3 sm:gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-base shadow-md">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 sm:p-4 border border-green-100">
+                        <p className="text-sm sm:text-base text-gray-800 leading-relaxed">{event}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quotes & Insights Section */}
+        {project.summary && extractQuotes(project.summary).length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
+            <button
+              onClick={() => setExpandedQuotes(!expandedQuotes)}
+              className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-t-2xl"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Quote className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Key Quotes</h2>
+              </div>
+              {expandedQuotes ? <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" /> : <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </button>
+            
+            {expandedQuotes && (
+              <div className="p-4 sm:p-6 pt-0 border-t border-gray-100">
+                <div className="space-y-3 sm:space-y-4">
+                  {extractQuotes(project.summary).map((quote, index) => (
+                    <div key={index} className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-4 sm:p-6 border-l-4 border-amber-500 shadow-sm">
+                      <Quote className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400 mb-2 sm:mb-3" />
+                      <p className="text-base sm:text-lg text-gray-800 italic leading-relaxed">{quote}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* People & References Section */}
+        {project.summary && extractPeople(project.summary).length > 0 && (
+          <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
+            <button
+              onClick={() => setExpandedPeople(!expandedPeople)}
+              className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-t-2xl"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">People & References</h2>
+              </div>
+              {expandedPeople ? <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" /> : <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </button>
+            
+            {expandedPeople && (
+              <div className="p-4 sm:p-6 pt-0 border-t border-gray-100">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  {extractPeople(project.summary).map((person, index) => (
+                    <div key={index} className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full px-3 py-2 sm:px-4 sm:py-2 border border-indigo-200">
+                      <p className="text-sm sm:text-base font-medium text-indigo-900">{person}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Interactive Quiz Modal */}
         {quizMode && project.quizCards && project.quizCards.length > 0 && (

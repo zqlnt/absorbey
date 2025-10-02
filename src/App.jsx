@@ -22,77 +22,39 @@ function AppContent() {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      height: '100vh', 
-      backgroundColor: '#f9fafb',
-      fontFamily: 'Inter, system-ui, sans-serif'
-    }}>
-      {/* Sidebar with project list */}
-      <Sidebar 
-        selectedProjectId={selectedProjectId}
-        onSelectProject={setSelectedProjectId}
-      />
+    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
+      {/* Sidebar with project list - hidden on mobile when project selected */}
+      <div className={`${selectedProjectId ? 'hidden md:block' : 'block'}`}>
+        <Sidebar 
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+        />
+      </div>
       
       {/* Main content area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* User menu */}
-        <div style={{ 
-          padding: '16px 24px', 
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 flex justify-end items-center gap-2 sm:gap-3 bg-white">
           {user ? (
             <>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px',
-                padding: '8px 12px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '8px'
-              }}>
-                <User className="w-4 h-4 text-gray-600" />
-                <span style={{ fontSize: '14px', color: '#4b5563' }}>
+              <div className="flex items-center gap-2 px-2 py-1 sm:px-3 sm:py-2 bg-gray-100 rounded-lg">
+                <User className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-gray-700 hidden sm:inline truncate max-w-[100px]">
                   {user.isAnonymous ? 'Guest' : user.email || 'User'}
                 </span>
               </div>
               <button
                 onClick={() => signOut()}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 12px',
-                  backgroundColor: '#fee2e2',
-                  color: '#991b1b',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
+                className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-2 bg-red-500 hover:bg-red-600 text-white border-none rounded-lg cursor-pointer text-xs sm:text-sm font-medium transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </>
           ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#8b5cf6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
+              className="px-3 py-2 sm:px-4 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white border-none rounded-lg cursor-pointer text-xs sm:text-sm font-medium transition-colors"
             >
               Sign In
             </button>
