@@ -16,6 +16,23 @@ const PORT = process.env.PORT || 3001
 app.use(cors())
 app.use(express.json())
 
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Absorbey API Server is running',
+    endpoints: [
+      'POST /api/generate-summary',
+      'POST /api/generate-quiz', 
+      'GET /api/video-metadata/:videoId'
+    ]
+  })
+})
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() })
+})
+
 // Function to get YouTube transcript using yt-dlp (MOST RELIABLE)
 async function getYouTubeTranscript(videoId) {
   const tempFile = `transcript-${videoId}-${Date.now()}`
@@ -470,11 +487,13 @@ app.get('/api/video-metadata/:videoId', async (req, res) => {
   }
 })
 
-app.listen(PORT, () => {
-  console.log(`🚀 Absorbey API Server running on http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Absorbey API Server running on http://0.0.0.0:${PORT}`)
   console.log(`🔑 Anthropic API Key: ${process.env.VITE_ANTHROPIC_API_KEY ? '✅' : '❌'}`)
   console.log(`📺 YouTube API Key: ${process.env.YOUTUBE_API_KEY ? '✅' : '❌'}`)
   console.log(`📋 Endpoints:`)
+  console.log(`   GET  / - Health check`)
+  console.log(`   GET  /health - Health status`)
   console.log(`   POST /api/generate-summary - Generate AI summary (with transcript)`)
   console.log(`   POST /api/generate-quiz - Generate quiz questions`)
   console.log(`   GET  /api/video-metadata/:videoId - Fetch video metadata`)
