@@ -2,8 +2,14 @@
 nixPkgs = ["nodejs", "python3", "yt-dlp"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm ci --production"]
+
+[phases.build]
+cmds = ["echo 'Build phase complete'"]
 
 [start]
 cmd = "node server.js"
+
+[variables]
+NODE_ENV = "production"
 
