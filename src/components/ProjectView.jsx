@@ -254,9 +254,9 @@ export default function ProjectView({ projectId, onBackToHome }) {
             onClick={() => setExpandedSummary(!expandedSummary)}
             className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-t-2xl"
           >
-            <div className="flex items-center gap-3">
-              <BookOpen className="w-6 h-6 text-purple-600" />
-              <h2 className="text-2xl font-bold text-gray-900">Key Learnings</h2>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Key Learnings</h2>
             </div>
             {expandedSummary ? <ChevronUp /> : <ChevronDown />}
           </button>
