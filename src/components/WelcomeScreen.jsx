@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext'
 const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
   const [inputValue, setInputValue] = useState('')
   const [isProcessingVideo, setIsProcessingVideo] = useState(false)
+  const [processingStage, setProcessingStage] = useState('')
+  const [progress, setProgress] = useState(0)
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [error, setError] = useState('')
@@ -45,15 +47,48 @@ const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
 
     setIsProcessingVideo(true)
     setError('')
+    setProgress(0)
+    
+    // Simulate progress stages
+    setProcessingStage('Fetching video information...')
+    setProgress(10)
+    
+    setTimeout(() => {
+      setProcessingStage('Extracting transcript...')
+      setProgress(25)
+    }, 500)
+    
+    setTimeout(() => {
+      setProcessingStage('Analyzing content with AI...')
+      setProgress(50)
+    }, 2000)
+    
+    setTimeout(() => {
+      setProcessingStage('Generating comprehensive summary...')
+      setProgress(75)
+    }, 5000)
+    
+    setTimeout(() => {
+      setProcessingStage('Creating quiz questions...')
+      setProgress(90)
+    }, 8000)
 
     try {
       const newProject = await addProject(inputValue)
+      setProgress(100)
       setInputValue('')
-      onProjectCreated(newProject.id) // Switch to the new project
+      setProcessingStage('Complete!')
+      setTimeout(() => {
+        onProjectCreated(newProject.id) // Switch to the new project
+      }, 500)
     } catch (err) {
       setError(err.message || 'Failed to create project. Please try again.')
     } finally {
-      setIsProcessingVideo(false)
+      setTimeout(() => {
+        setIsProcessingVideo(false)
+        setProcessingStage('')
+        setProgress(0)
+      }, 1000)
     }
   }
 
@@ -125,12 +160,51 @@ const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
             <p>Enter a YouTube URL to start learning</p>
           </div>
 
-          {/* Processing Video Indicator */}
+          {/* Processing Video Indicator with Progress Bar */}
           {isProcessingVideo && (
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Processing video and generating AI content...
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border-2 border-purple-200 p-6 shadow-lg">
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">{processingStage}</span>
+                    <span className="text-sm font-bold text-purple-600">{progress}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Loading Animation */}
+                <div className="flex items-center justify-center gap-2 text-purple-700">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">This may take 10-30 seconds...</span>
+                </div>
+                
+                {/* Status Details */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${progress >= 10 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span>Video Info</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${progress >= 25 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span>Transcript</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${progress >= 50 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span>AI Analysis</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${progress >= 75 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span>Summary</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
