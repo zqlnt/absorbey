@@ -1,5 +1,6 @@
-// Use local API server to proxy Anthropic API calls (bypasses CORS and secures API key)
-const API_SERVER_URL = 'http://localhost:3001'
+// Use Railway backend server to proxy Anthropic API calls (bypasses CORS and secures API key)
+// Use environment variable for flexibility between local and production
+const API_SERVER_URL = import.meta.env.VITE_API_SERVER_URL || 'https://absorbey-production.up.railway.app'
 
 export const generateVideoSummary = async (videoTitle, videoDescription = '', videoId = null) => {
   try {
@@ -31,7 +32,7 @@ export const generateVideoSummary = async (videoTitle, videoDescription = '', vi
     return data.summary
   } catch (error) {
     console.error('💥 Error generating summary:', error)
-    console.error('💥 Make sure the API server is running: npm run server')
+    console.error('💥 Backend server may be unavailable. Check Railway deployment.')
     // Return a fallback summary
     return `Key Points about "${videoTitle}":
 
@@ -45,7 +46,7 @@ export const generateVideoSummary = async (videoTitle, videoDescription = '', vi
 
 5. Viewers can expect to gain a deeper understanding of the topic through this comprehensive overview.
 
-Note: Real AI summary requires the API server to be running. Start it with: npm run server`
+Note: Unable to connect to the AI backend server. Please check your internet connection or try again later.`
   }
 }
 
@@ -81,7 +82,7 @@ export const generateQuizCards = async (videoTitle, summary) => {
     return generateFallbackQuiz(videoTitle, summary)
   } catch (error) {
     console.error('💥 Error generating quiz:', error)
-    console.error('💥 Make sure the API server is running: npm run server')
+    console.error('💥 Backend server may be unavailable. Check Railway deployment.')
     return generateFallbackQuiz(videoTitle, summary)
   }
 }
