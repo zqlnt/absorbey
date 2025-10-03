@@ -101,19 +101,20 @@ const WelcomeScreen = ({ onProjectCreated, onCreateProjectAttempt }) => {
                 setError('')
               }}
               disabled={isProcessingVideo}
-              className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 text-lg md:text-base focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 disabled:opacity-50"
+              className="w-full px-6 py-4 pr-16 rounded-2xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 text-base focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 disabled:opacity-50"
               placeholder="Paste YouTube link to start learning..."
             />
             {inputValue && (
               <button
                 type="submit"
                 disabled={isProcessingVideo}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white transition-colors duration-200 disabled:cursor-not-allowed"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-3 sm:p-2.5 rounded-full bg-purple-600 hover:bg-purple-700 active:bg-purple-800 disabled:bg-purple-400 text-white transition-colors duration-200 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Submit YouTube link"
               >
                 {isProcessingVideo ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 sm:w-5 sm:h-5 animate-spin" />
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <Send className="w-5 h-5 sm:w-5 sm:h-5" />
                 )}
               </button>
             )}

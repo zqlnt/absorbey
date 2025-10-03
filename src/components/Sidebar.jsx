@@ -11,7 +11,7 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
     <div
       className={`
         fixed lg:sticky top-0 left-0 h-screen
-        ${collapsed ? 'lg:w-20' : 'w-[280px] sm:w-72 lg:w-80'}
+        ${collapsed ? 'w-20' : 'w-[280px] lg:w-80'}
         bg-gradient-to-b from-white to-gray-50 border-r border-gray-200
         flex flex-col
         z-50
@@ -21,15 +21,15 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
       `}
     >
       {/* Header */}
-      <div className="h-14 border-b border-gray-100 flex items-center justify-between px-4 lg:px-6 relative">
+      <div className="h-14 border-b border-gray-100 flex items-center justify-center px-3 relative">
         {collapsed ? (
-          // Collapsed: Just orb, button below
-          <div className="flex flex-col items-center w-full gap-1">
+          // Collapsed: Just logo centered, button overlays at bottom
+          <div className="flex items-center justify-center w-full">
             <LavaOrb size="small" />
-            {/* Collapse button below logo when collapsed */}
+            {/* Collapse button positioned at bottom center when collapsed */}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:block p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              className="hidden lg:flex items-center justify-center p-1 hover:bg-gray-100 rounded-lg transition-colors absolute bottom-1 left-1/2 transform -translate-x-1/2"
               aria-label="Expand sidebar"
             >
               <ChevronRight className="w-3 h-3 text-gray-600" />
@@ -37,7 +37,7 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
           </div>
         ) : (
           // Expanded: Logo and title on left, button on right
-          <>
+          <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-3">
               <LavaOrb size="small" />
               <div>
@@ -54,7 +54,7 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
             >
               <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
-          </>
+          </div>
         )}
         
         {/* Close button (mobile only) */}
@@ -69,7 +69,7 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
 
       {/* New Project Button */}
       {!collapsed && (
-        <div className="p-3 lg:p-4">
+        <div className="p-4">
           <button
             onClick={() => {
               onSelectProject(null); // Go to home
@@ -85,7 +85,7 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
 
       {/* Projects Header */}
       {projects.length > 0 && !collapsed && (
-        <div className="px-4 lg:px-6 pb-2">
+        <div className="px-4 pb-2">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Your Projects ({projects.length})
           </h2>
@@ -93,7 +93,7 @@ export default function Sidebar({ selectedProjectId, onSelectProject, isOpen, on
       )}
 
       {/* Projects List */}
-      <div className="flex-1 overflow-y-auto px-3 lg:px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
         {projects.length === 0 ? (
           !collapsed && (
             <div className="text-center py-8 px-4">
