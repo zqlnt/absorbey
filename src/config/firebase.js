@@ -15,6 +15,13 @@ const firebaseConfig = {
 }
 
 // Validate required environment variables
+console.log('🔧 Firebase config check:', {
+  hasApiKey: !!firebaseConfig.apiKey,
+  hasProjectId: !!firebaseConfig.projectId,
+  apiKeyPreview: firebaseConfig.apiKey?.substring(0, 10) + '...',
+  projectId: firebaseConfig.projectId
+})
+
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error('⚠️ Missing Firebase configuration. Please check your .env.local file.')
   console.error('⚠️ App will run without authentication features.')
@@ -28,16 +35,19 @@ let analytics = null
 
 try {
   if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+    console.log('🔥 Attempting Firebase initialization...')
     app = initializeApp(firebaseConfig)
     auth = getAuth(app)
     db = getFirestore(app)
     analytics = typeof window !== 'undefined' ? getAnalytics(app) : null
     console.log('✅ Firebase initialized successfully')
+    console.log('✅ Auth object created:', !!auth)
   } else {
     console.warn('⚠️ Firebase not initialized - missing configuration')
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error.message)
+  console.error('❌ Full error:', error)
   console.warn('⚠️ App will continue without Firebase features')
 }
 

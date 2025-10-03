@@ -22,7 +22,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // DEBUG: Log state changes
   useEffect(() => {
+    console.log('🔍 AUTH DEBUG - loading:', loading, 'user:', user, 'auth exists:', !!auth)
+  }, [loading, user])
+
+  useEffect(() => {
+    console.log('🚀 AuthProvider useEffect running, auth:', !!auth)
+    
     // If auth is not initialized, skip
     if (!auth) {
       console.warn('⚠️ Firebase Auth not initialized - app will run without authentication')
@@ -33,22 +40,24 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth state changes
     const unsubscribe = onAuthStateChanged(auth, 
       (user) => {
+        console.log('✅ onAuthStateChanged callback - user:', user?.email || 'anonymous/null')
         setUser(user)
         setLoading(false)
       },
       (error) => {
-        console.error('Auth state change error:', error)
+        console.error('❌ Auth state change error:', error)
         setLoading(false) // Still set loading to false even on error
       }
     )
 
-    // Fallback timeout in case auth never resolves
+    // Fallback timeout in case auth never resolves (reduced to 1 second for faster debugging)
     const timeout = setTimeout(() => {
+      console.log('⏰ AUTH TIMEOUT TRIGGERED after 1 second')
       if (loading) {
-        console.warn('Auth initialization timeout - proceeding without auth')
+        console.warn('⚠️ Auth initialization timeout - proceeding without auth')
         setLoading(false)
       }
-    }, 3000)
+    }, 1000)
 
     return () => {
       unsubscribe()

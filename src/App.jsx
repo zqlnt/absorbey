@@ -8,9 +8,11 @@ import AuthModal from './components/AuthModal';
 import { LogOut, User } from 'lucide-react';
 
 function AppContent() {
+  console.log('🚀 AppContent component rendering')
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
+  console.log('👤 AppContent - user:', user)
 
   const handleProjectCreated = (projectId) => {
     // Show auth modal if user is not signed in
@@ -84,6 +86,7 @@ function AppContent() {
 }
 
 function App() {
+  console.log('🎯 App component rendering')
   return (
     <AuthProvider>
       <ProjectProvider>

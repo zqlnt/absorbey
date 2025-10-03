@@ -1,10 +1,10 @@
-import { StrictMode } from 'react'
+import React, { StrictMode, Component } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
 // Error boundary to catch rendering errors
-class ErrorBoundary extends StrictMode {
+class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
     this.state = { hasError: false, error: null }

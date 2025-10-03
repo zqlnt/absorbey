@@ -8,18 +8,26 @@ export default function Sidebar({ selectedProjectId, onSelectProject }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
-    <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-gray-50 to-white border-r-2 border-gray-100 shadow-lg flex flex-col transition-all duration-300`}>
+    <div className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gradient-to-b from-gray-50 to-white border-r-2 border-gray-100 shadow-lg flex flex-col transition-all duration-300`}>
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200 relative">
-          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} ${sidebarCollapsed ? 'pr-8' : 'pr-8'}`}>
-            <LavaOrb size={sidebarCollapsed ? 'small' : 'default'} />
-            {!sidebarCollapsed && (
-              <h1 className="text-2xl font-bold text-gray-900">Absorbey</h1>
-            )}
-          </div>
+        <div className={`${sidebarCollapsed ? 'p-4' : 'p-6'} border-b border-gray-200 relative flex items-center justify-center`}>
+          {sidebarCollapsed ? (
+            // Collapsed: Just the orb centered
+            <div className="flex flex-col items-center gap-2">
+              <LavaOrb size="small" />
+            </div>
+          ) : (
+            // Expanded: Orb + text with collapse button
+            <div className="flex items-center gap-3 w-full pr-8">
+              <LavaOrb size="default" />
+              <h1 className="text-2xl font-bold text-gray-900 whitespace-nowrap">Absorbey</h1>
+            </div>
+          )}
+          
+          {/* Collapse button - positioned differently based on state */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute top-6 right-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            className={`absolute ${sidebarCollapsed ? 'top-2 right-2' : 'top-6 right-2'} p-1 rounded-lg hover:bg-gray-100 transition-colors`}
           >
             {sidebarCollapsed ? (
               <ChevronRight className="w-4 h-4 text-gray-600" />
@@ -59,15 +67,33 @@ export default function Sidebar({ selectedProjectId, onSelectProject }) {
                       className="w-full text-left p-3 rounded-lg"
                       title={sidebarCollapsed ? project.title : undefined}
                     >
-                      {!sidebarCollapsed && project.thumbnail && (
-                        <img 
-                          src={project.thumbnail} 
-                          alt={project.title}
-                          className="w-full h-20 object-cover rounded mb-2"
-                        />
-                      )}
-                      {!sidebarCollapsed && (
+                      {sidebarCollapsed ? (
+                        // Collapsed: Show a small thumbnail or colored dot
+                        <div className="flex justify-center">
+                          {project.thumbnail ? (
+                            <img 
+                              src={project.thumbnail} 
+                              alt={project.title}
+                              className="w-10 h-10 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-purple-200 rounded flex items-center justify-center">
+                              <span className="text-purple-700 font-bold text-sm">
+                                {project.title?.[0]?.toUpperCase() || 'P'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // Expanded: Show full details
                         <>
+                          {project.thumbnail && (
+                            <img 
+                              src={project.thumbnail} 
+                              alt={project.title}
+                              className="w-full h-20 object-cover rounded mb-2"
+                            />
+                          )}
                           <h3 className="font-medium text-sm text-gray-900 truncate">
                             {project.title || 'Untitled Project'}
                           </h3>
