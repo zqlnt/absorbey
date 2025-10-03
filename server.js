@@ -10,7 +10,8 @@ const execPromise = promisify(exec)
 dotenv.config({ path: '.env.local' })
 
 const app = express()
-const PORT = 3001
+// Use Railway's dynamic PORT or default to 3001 for local development
+const PORT = process.env.PORT || 3001
 
 app.use(cors())
 app.use(express.json())
